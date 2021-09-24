@@ -10,6 +10,10 @@ inputs:
   container_registry_password:
     description: “Password for image registry (token for scw)”
     required: true
+outputs:
+  docker_image_name:
+    description: "Docker image name with short sha for deployment"
+    value: ${{ steps.prep.outputs.tag_sha }}"
 runs:
   using: "composite"
   steps:
