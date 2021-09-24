@@ -24,7 +24,9 @@ runs:
           IMAGE_NAME=${IMAGE_NAME}-ops
           DOCKERFILE=Dockerfile-ops
         fi
+        TAG_SHA="${IMAGE_NAME}:${SHORTREF}"
         TAGS="${IMAGE_NAME}:${VERSION},${IMAGE_NAME}:${SHORTREF}"
+        echo ::set-output name=tag_sha::${TAG_SHA}
         echo ::set-output name=tags::${TAGS}
         echo ::set-output name=image_name::${IMAGE_NAME}
         echo ::set-output name=dockerfile::${DOCKERFILE}
@@ -33,7 +35,8 @@ runs:
       run: |
         echo "The dockerfile name is ${{ steps.prep.outputs.dockerfile }}"
         echo "The image name is ${{ steps.prep.outputs.image_name }}"
-        echo "The tag is ${{ steps.prep.outputs.tags }}"
+        echo "The tag with short sha is ${{ steps.prep.outputs.tag_sha }}"        
+        echo "The tags are ${{ steps.prep.outputs.tags }}"
       shell: bash
     - name: copy dockerfile
       run: |
