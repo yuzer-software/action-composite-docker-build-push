@@ -13,7 +13,7 @@ inputs:
 outputs:
   docker_image_name:
     description: "Docker image name with short sha for deployment"
-    value: ${{ steps.prep.outputs.tag_sha }}"
+    value: ${{ steps.prep.outputs.tag_sha }}
 runs:
   using: "composite"
   steps:
