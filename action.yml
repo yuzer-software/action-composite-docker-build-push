@@ -1,0 +1,54 @@
+name: 'action-composite-docker-build-push'
+description: 'build with proper dockerfile and push docker image to private repo'
+inputs:
+  container_registry_server:
+    description: “Docker private registry url”
+    required: true
+  container_registry_login:
+    description: “Login for image registry”
+    required: true
+  container_registry_password:
+    description: “Password for image registry (token for scw)”
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare
+      id: prep
+      run: |
+        IMAGE_NAME=${{ inputs.container_registry_server }}/${{ env.DEPLOYMENT_NAME }}
+        VERSION=latest
+        SHORTREF=${GITHUB_SHA::8}
+        DOCKERFILE=Dockerfile
+        if [[ ${GITHUB_REF} == refs/heads/ops ]]; then
+          IMAGE_NAME=${IMAGE_NAME}-ops
+          DOCKERFILE=Dockerfile-ops
+        fi
+        TAGS="${IMAGE_NAME}:${VERSION},${IMAGE_NAME}:${SHORTREF}"
+        echo ::set-output name=tags::${TAGS}
+        echo ::set-output name=image_name::${IMAGE_NAME}
+        echo ::set-output name=dockerfile::${DOCKERFILE}
+      shell: bash
+    - name: check output
+      run: |
+        echo "The dockerfile name is ${{ steps.prep.outputs.dockerfile }}"
+        echo "The image name is ${{ steps.prep.outputs.image_name }}"
+        echo "The tag is ${{ steps.prep.outputs.tags }}"
+      shell: bash
+    - name: copy dockerfile
+      run: |
+        mkdir -p build/docker/service && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/service && cp build/libs/* build/docker/service
+      shell: bash
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ inputs.container_registry_server }}
+        username: ${{ inputs.registry_login }}
+        password: ${{ inputs.registry_password }}
+    - name: Build
+      uses: docker/build-push-action@v2
+      with:
+        context: build/docker/service
+        file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
+        push: true
+        tags: ${{ steps.prep.outputs.tags }}
