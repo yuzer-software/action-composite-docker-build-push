@@ -52,11 +52,19 @@ runs:
         echo "The tag with short sha is ${{ steps.prep.outputs.tag_sha }}"        
         echo "The tags are ${{ steps.prep.outputs.tags }}"
       shell: bash
-    - name: copy dockerfile
+
+    - name: copy dockerfile and libs for service
+      if: '!inputs.BATCH'
       run: |
         mkdir -p build/docker/service && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/service && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/service
       shell: bash
-   
+
+    - name: copy dockerfile ans libs for batch
+      if: 'inputs.BATCH'
+      run: |
+        mkdir -p build/docker/batch && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/batch && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/batch
+      shell: bash
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
@@ -66,10 +74,21 @@ runs:
         registry: ${{ inputs.container_registry_server }}
         username: ${{ inputs.container_registry_login }}
         password: ${{ inputs.container_registry_password }}
-    - name: Build
+      
+    - name: Build service image
+      if: '!inputs.BATCH'
       uses: docker/build-push-action@v2
       with:
         context: build/docker/service
+        file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
+        push: true
+        tags: ${{ steps.prep.outputs.tags }}
+
+    - name: Build batch image
+      if: 'inputs.BATCH'
+      uses: docker/build-push-action@v2
+      with:
+        context: build/docker/batch
         file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
         push: true
         tags: ${{ steps.prep.outputs.tags }}
