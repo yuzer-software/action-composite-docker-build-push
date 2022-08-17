@@ -1,5 +1,8 @@
-FROM openjdk:8-jre-alpine
-RUN apk add --no-cache fontconfig ttf-dejavu
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
+
+ADD install_packages.sh /tmp
+RUN sh /tmp/install_packages.sh
 
 ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS \
     STARTUP_SLEEP=0 \

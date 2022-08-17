@@ -10,6 +10,10 @@ inputs:
   container_registry_password:
     description: “Password for image registry (token for scw)”
     required: true
+  base_image:
+    description: “base image for docker build (override default ARG from dockerfile)”
+    default: "openjdk:8-jre-alpine"
+    required: false
   gradle_build_folder:
     description: “Folder where libs are build”
     required: true
@@ -53,16 +57,22 @@ runs:
         echo "The tags are ${{ steps.prep.outputs.tags }}"
       shell: bash
 
-    - name: copy dockerfile and libs for service
+    - name: copy dockerfile, script and libs for service
       if: '!inputs.BATCH'
       run: |
-        mkdir -p build/docker/service && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/service && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/service
+        mkdir -p build/docker/service \
+          && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/service \
+          && cp ${{ github.action_path }}/install_packages.sh build/docker/service \
+          && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/service
       shell: bash
 
-    - name: copy dockerfile ans libs for batch
+    - name: copy dockerfile, script and libs for batch
       if: 'inputs.BATCH'
       run: |
-        mkdir -p build/docker/batch && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/batch && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/batch
+        mkdir -p build/docker/batch \
+          && cp ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }} build/docker/batch \
+          && cp ${{ github.action_path }}/install_packages.sh build/docker/batch \
+          && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/batch
       shell: bash
 
     - name: Set up Docker Buildx
@@ -81,6 +91,7 @@ runs:
       with:
         context: build/docker/service
         file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
+        build-args: "BASE_IMAGE=${{ inputs.base_image }}"
         push: true
         tags: ${{ steps.prep.outputs.tags }}
 
@@ -90,5 +101,6 @@ runs:
       with:
         context: build/docker/batch
         file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
+        build-args: "BASE_IMAGE=${{ inputs.base_image }}"
         push: true
         tags: ${{ steps.prep.outputs.tags }}
