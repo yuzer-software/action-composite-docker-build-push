@@ -35,7 +35,8 @@ runs:
       run: |
         IMAGE_NAME=${{ inputs.container_registry_server }}/${{ inputs.image_name || env.IMAGE_NAME }}
         VERSION=latest
-        SHORTREF=${GITHUB_SHA::8}
+        COMMIT_SHA=${{ github.event.inputs.commit_sha || github.sha }}
+        SHORTREF=${COMMIT_SHA::8}
         DOCKERFILE=Dockerfile
         if [[ ${GITHUB_REF} == 'refs/heads/ops' ]]; then
           IMAGE_NAME=${IMAGE_NAME}-ops
