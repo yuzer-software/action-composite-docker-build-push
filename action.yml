@@ -1,5 +1,5 @@
-name: 'action-composite-docker-build-push'
-description: 'build with proper dockerfile and push docker image to private repo'
+name: "action-composite-docker-build-push"
+description: "build with proper dockerfile and push docker image to private repo"
 inputs:
   container_registry_server:
     description: “Docker private registry url”
@@ -12,30 +12,30 @@ inputs:
     required: true
   base_image:
     description: “base image for docker build (override default ARG from dockerfile)”
-    default: 'openjdk:8-jre-alpine'
+    default: "openjdk:8-jre-alpine"
     required: false
   gradle_build_folder:
     description: “Folder where libs are build for gradle”
     required: true
-  ng_build_folder:
+  web_folder:
     description: “Folder where libs are build for angular”
     required: true
   BATCH:
-    description: 'Set to true to create batch docker image'
+    description: "Set to true to create batch docker image"
     required: false
   image_name:
-    description: 'Set custom image name'
+    description: "Set custom image name"
     required: false
   dockerfile_type:
-    description: 'Provide type of dockerfile to use, service or webserver'
+    description: "Provide type of dockerfile to use, service or webserver"
     required: true
-    default: 'service'
+    default: "service"
 outputs:
   docker_image_name:
-    description: 'Docker image name with short sha for deployment'
+    description: "Docker image name with short sha for deployment"
     value: ${{ steps.prep.outputs.tag_sha }}
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Prepare
       id: prep
@@ -69,7 +69,7 @@ runs:
       run: |
         echo "The dockerfile name is ${{ steps.prep.outputs.dockerfile }}"
         echo "The image name is ${{ steps.prep.outputs.image_name }}"
-        echo "The tag with short sha is ${{ steps.prep.outputs.tag_sha }}"        
+        echo "The tag with short sha is ${{ steps.prep.outputs.tag_sha }}"
         echo "The tags are ${{ steps.prep.outputs.tags }}"
       shell: bash
 
@@ -99,12 +99,6 @@ runs:
           && cp ${{ inputs.gradle_build_folder }}/build/libs/* build/docker/${{ inputs.image_name || env.IMAGE_NAME }}/batch
       shell: bash
 
-    # webserver type
-    - name: nginx config for webserver webserver image build
-      if: inputs.dockerfile_type == 'webserver'
-      run: cp ${{ github.action_path }}/webserver-nginx.conf ${{ inputs.ng_build_folder }}
-      shell: bash
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
@@ -116,7 +110,7 @@ runs:
       with:
         context: build/docker/${{ inputs.image_name || env.IMAGE_NAME }}/service
         file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
-        build-args: 'BASE_IMAGE=${{ inputs.base_image }}'
+        build-args: "BASE_IMAGE=${{ inputs.base_image }}"
         push: true
         tags: ${{ steps.prep.outputs.tags }}
         platforms: linux/amd64
@@ -127,20 +121,27 @@ runs:
       with:
         context: build/docker/${{ inputs.image_name || env.IMAGE_NAME }}/batch
         file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
-        build-args: 'BASE_IMAGE=${{ inputs.base_image }}'
+        build-args: "BASE_IMAGE=${{ inputs.base_image }}"
         push: true
         tags: ${{ steps.prep.outputs.tags }}
         platforms: linux/amd64
+
+    # Copy the file in the docker context
+    - name: nginx config for webserver webserver image build
+      if: inputs.dockerfile_type == 'webserver'
+      run: cp ${{ github.action_path }}/webserver-nginx.conf dist
+      shell: bash
 
     - name: Build webserver image
       if: inputs.dockerfile_type == 'webserver'
       uses: docker/build-push-action@v5
       with:
-        context: ${{ inputs.ng_build_folder }}
+        context: dist
         file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
         build-args: |
           "BASE_IMAGE=${{ inputs.base_image }}"
-          "BUILD_DIR=${{ inputs.ng_build_folder }}"
+          "WEB_DIR=${{ inputs.web_folder }}"
+          "CONF_PATH=webserver-nginx.conf"
         push: true
         tags: ${{ steps.prep.outputs.tags }}
         platforms: linux/amd64
