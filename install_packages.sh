@@ -3,6 +3,7 @@ PACKAGE_LIST="fontconfig ttf-dejavu"
 if type apk > /dev/null; then
     apk add --no-cache $PACKAGE_LIST
 elif type apt-get > /dev/null; then
+    cat /etc/apt/sources.list
     apt-get update && apt-get install -y $PACKAGE_LIST \
         && rm -rf /var/lib/apt/lists/*
 elif type yum > /dev/null; then
