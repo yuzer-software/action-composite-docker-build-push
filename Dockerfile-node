@@ -1,12 +1,19 @@
-ARG BASE_IMAGE
-ARG BUILD_DIR
+ARG BASE_IMAGE=node:22-alpine
 FROM $BASE_IMAGE
 
-RUN rm -rf /usr/share/nginx/html/*
-COPY $BUILD_DIR/webserver-nginx.conf /etc/nginx/conf.d/default.conf
-COPY $BUILD_DIR/yuzer /usr/share/nginx/html/
+ARG WEB_DIR
 
-# Set base-ref to ./ui/
-RUN sed -i 's|<base href="./">|<base href="/ui/">|g' /usr/share/nginx/html/index.html
+RUN rm -rf /app/dist
+COPY $WEB_DIR /app/dist/
 
 EXPOSE 8080
+
+WORKDIR /app/dist/
+
+# Default command
+CMD echo "Current directory:" && \
+    pwd && \
+    echo "Content" && \
+    ls && \
+    echo "Starting node:" && \
+    node app.js

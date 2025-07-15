@@ -57,6 +57,8 @@ runs:
           fi
         elif [[ ${{ inputs.dockerfile_type }} == 'webserver' ]]; then
           DOCKERFILE=Dockerfile-nginx
+        elif [[ ${{ inputs.dockerfile_type }} == 'node' ]]; then
+          DOCKERFILE=Dockerfile-node
         fi
         TAG_SHA="${IMAGE_NAME}:${SHORTREF}"
         TAGS="${IMAGE_NAME}:${VERSION},${IMAGE_NAME}:${SHORTREF}"
@@ -142,6 +144,19 @@ runs:
           "BASE_IMAGE=${{ inputs.base_image }}"
           "WEB_DIR=${{ inputs.web_folder }}"
           "CONF_PATH=webserver-nginx.conf"
+        push: true
+        tags: ${{ steps.prep.outputs.tags }}
+        platforms: linux/amd64
+
+    - name: Build node image
+      if: inputs.dockerfile_type == 'node'
+      uses: docker/build-push-action@v5
+      with:
+        context: dist
+        file: ${{ github.action_path }}/${{ steps.prep.outputs.dockerfile }}
+        build-args: |
+          "BASE_IMAGE=${{ inputs.base_image }}"
+          "WEB_DIR=${{ inputs.web_folder }}"
         push: true
         tags: ${{ steps.prep.outputs.tags }}
         platforms: linux/amd64
