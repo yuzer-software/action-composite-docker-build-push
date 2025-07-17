@@ -15,5 +15,9 @@ CMD echo "Current directory:" && \
     pwd && \
     echo "Content" && \
     ls && \
+    echo "Prepare and install prisma" && \
+    npx prisma generate && \
+    npx prisma migrate deploy && \
+    npx prisma migrate status && \
     echo "Starting node:" && \
     node app.js
