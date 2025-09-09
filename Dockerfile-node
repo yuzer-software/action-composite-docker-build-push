@@ -13,10 +13,7 @@ WORKDIR /app/dist/
 # Default command
 CMD echo "Current directory:" && \
     pwd && \
-    echo "Content" && \
-    ls && \
-    echo "Prepare and install prisma" && \
-    npx prisma generate && \
+    echo "Run prisma deploy and status" && \
     npx prisma migrate deploy && \
     npx prisma migrate status && \
     echo "Starting node:" && \
