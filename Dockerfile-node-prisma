@@ -13,5 +13,8 @@ WORKDIR /app/dist/
 # Default command
 CMD echo "Current directory:" && \
     pwd && \
+    echo "Run prisma deploy and status" && \
+    npx prisma migrate deploy && \
+    npx prisma migrate status && \
     echo "Starting node:" && \
     node app.js
